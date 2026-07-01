@@ -287,6 +287,7 @@
       <h1>SUN</h1>
       <p>Control de ingreso</p>
     </div>
+    <button onclick="resetAll()" style="margin-left:auto;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:99px;padding:6px 14px;font-size:11px;font-weight:700;color:white;cursor:pointer;font-family:'Nunito Sans',sans-serif;letter-spacing:0.5px;">Reiniciar</button>
   </header>
 
   <div class="counter-bar">
@@ -333,10 +334,15 @@
   <script>
     const SHEET_ID = '1NMWXtLPU8S0bVbFXo5aCTUT8AeF9UnoDzVnqLWutkxE';
     const SHEET_NAME = 'Hoja1';
+    const STORAGE_KEY = 'sun_checked_in';
 
-    let allStudents = [];   // { id, nombre }
-    let checkedIn = new Set();
+    let allStudents = [];
+    let checkedIn = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
     let listOpen = false;
+
+    function saveCheckedIn() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedIn]));
+    }
 
     // ── Load students from Google Sheet ──────────────────────────────
     async function loadStudents() {
@@ -386,6 +392,7 @@
 
       const alreadyIn = checkedIn.has(student.id);
       checkedIn.add(student.id);
+      saveCheckedIn();
       updateCounters();
       renderMissingList();
 
@@ -462,6 +469,18 @@
     }, 500);
 
     window.addEventListener('popstate', checkURLParam);
+
+    // ── Reset ─────────────────────────────────────────────────────────
+    function resetAll() {
+      if (!confirm('¿Reiniciar el conteo? Esto borrará todos los ingresos registrados.')) return;
+      checkedIn.clear();
+      saveCheckedIn();
+      updateCounters();
+      renderMissingList();
+      const box = document.getElementById('scan-box');
+      box.className = 'scan-box';
+      box.innerHTML = '<div class="scan-icon">🔍</div><div class="scan-idle">Acerca una pulsera para registrar ingreso</div>';
+    }
 
     // ── Init ──────────────────────────────────────────────────────────
     loadStudents().then(checkURLParam);
